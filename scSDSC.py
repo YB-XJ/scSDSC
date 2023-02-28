@@ -1,14 +1,12 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 from sklearn import metrics
-import traceback
 import h5py
 from sklearn import preprocessing
 import pandas as pd
 import scanpy as sc
-
+from sklearn.preprocessing import normalize
 from scipy.sparse.linalg import svds
 from sklearn.manifold import TSNE
 from sklearn import cluster
@@ -44,22 +42,8 @@ def post_proC(C, K, d, alpha, ro):
     spectral = cluster.SpectralClustering(n_clusters=K, eigen_solver='arpack', affinity='precomputed',assign_labels='discretize',random_state=22)
     spectral.fit(L)
     grp = spectral.fit_predict(L) + 1
-    
-    #one=np.ones((L.shape[0],1))
-    #D=np.diag(np.dot(L+np.eye(L.shape[0]), one).reshape(-1))
-    # D=np.diag(np.dot(L, one).reshape(-1))
-    # A=D-L
-    # eigenvalue, featurevector = np.linalg.eig(A)
-    #print(sum_K(eigenvalue))
     return grp, L
 
-def sum_K(L):
-    sum_1=0
-    L=np.array(L,dtype=float)
-    for i in range(len(L)):
-        if abs(L[i])<2:
-            sum_1=sum_1+1
-    return sum_1
 #colors = plt.cm.rainbow(np.linspace(0, 1,20))
 colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k','orangered','greenyellow','darkolivegreen','maroon','darkgreen','darkslateblue','deeppink','goldenrod','teal','cornflowerblue','darksalmon','lightcoral','fuchsia']
 marks = ['o','+','.']
@@ -81,7 +65,6 @@ def visualize(Img,Label,AE=None,filep=None):
     #Z_emb = TSNE(n_components=2).fit_transform(Z, Label)
     Z_emb = umap.UMAP(n_components=2).fit_transform(Z, Label)
     lbs = np.unique(Label)#lbs：0-9
-    #colors = plt.cm.rainbow(np.linspace(0,max(lbs) ,len(lbs)))
     for ii in range(lbs.size):
         Z_embi = Z_emb[[i for i in range(n) if Label[i] == lbs[ii]]].transpose()#shape:2*500
         # print(Z_embi)
