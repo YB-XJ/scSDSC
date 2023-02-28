@@ -2,23 +2,14 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from sklearn.preprocessing import scale
 from sklearn import metrics
-#from AEutils import  *
 import traceback
 import h5py
 from sklearn import preprocessing
-import seaborn as sns
 import pandas as pd
-from time import time 
-from sklearn.preprocessing import LabelEncoder
-#import scipy.io as scio
 import scanpy as sc
 
-import scprep
-
 from scipy.sparse.linalg import svds
-from sklearn.preprocessing import normalize,MinMaxScaler
 from sklearn.manifold import TSNE
 from sklearn import cluster
 import umap.umap_ as umap
@@ -100,10 +91,6 @@ def visualize(Img,Label,AE=None,filep=None):
         plt.savefig(filep)
     plt.show()
 
-
-
-
-
 class AE(object):
     def __init__(self, n_input, n_hidden, reg_constant1=1.0, re_constant2=1.0, re_constant3=1.0,re_constant4=1.0,
                  batch_size=200, reg=None,ds=None, \
@@ -127,15 +114,15 @@ class AE(object):
         weights = self._initialize_weights()
 
         x_input = self.x
-        latent = tf.layers.dense(x_input,n_hidden[0],activation=tf.nn.relu)#500
-        latent = tf.layers.dense(latent, n_hidden[1],activation=tf.nn.relu)#500
-        latent = tf.layers.dense(latent, n_hidden[2],activation=tf.nn.relu)#2000
-        latent = tf.layers.dense(latent, n_hidden[3], activation=None)#10
+        latent = tf.layers.dense(x_input,n_hidden[0],activation=tf.nn.relu)
+        latent = tf.layers.dense(latent, n_hidden[1],activation=tf.nn.relu)
+        latent = tf.layers.dense(latent, n_hidden[2],activation=tf.nn.relu)
+        latent = tf.layers.dense(latent, n_hidden[3], activation=None)
         
         z = latent
         if ds is not None:
             pslb = tf.layers.dense(z,ds,kernel_initializer=tf.random_normal_initializer(),activation=tf.nn.softmax,name = 'ss_d')
-            cluster_assignment = tf.argmax(pslb, -1)#在倒数第一维取最大值的索引
+            cluster_assignment = tf.argmax(pslb, -1)
             eq = tf.to_float(tf.equal(cluster_assignment,tf.transpose(cluster_assignment)))
 
         Coef = weights['Coef']
@@ -212,21 +199,14 @@ class AE(object):
         #label1=tf.one_hot(self.label,ds)
         self.w_weight=weight_label
         self.labelloss=tf.losses.softmax_cross_entropy(onehot_labels=cluster_assignment1,logits=pslb,weights=weight_label)
-
         self.graphloss = tf.reduce_sum(tf.nn.relu((1 - eq) * C) + tf.nn.relu(eq * (0.001 - C))) + tf.reduce_sum(tf.square(regass))
-
-
         self.loss = self.reconst_cost + reg_constant1 * self.reg_losses + re_constant2 * self.selfexpress_losses
 
         self.loss2 = ( self.reconst_cost+re_constant3 * self.tracelossx + +re_constant2 * self.selfexpress_losses +  +re_constant3 * self.labelloss+re_constant4 * self.graphloss)
-
-        # self.reconst_cost + reg_constant1 * self.reg_losses + re_constant3 * self.selfexpress_losses2 + re_constant2 * self.selfexpress_losses
         self.merged_summary_op = tf.summary.merge_all()
-        #self.optimizer2 = AdamW(learning_rate=self.learning_rate).minimize(self.loss2)
         self.optimizer2 = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss2)  
         # GradientDescentOptimizer #AdamOptimizer
         self.optimizer = self.optimizer2
-        #tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.loss) 
         # GradientDescentOptimizer #AdamOptimizer
         self.optimizer_pre = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.reconst_cost_pre)
         self.init = tf.global_variables_initializer()
@@ -316,12 +296,9 @@ class AE(object):
     def restore(self):
         self.saver.restore(self.sess, self.restore_path)
         print("model restored")
-
-#for the first time training the model, set the pred to False
 pred = False
    
 def test_face(Img, Label, AE, num_class,lr1=1e-3,lr2=1e-4,pre_iters=200,fit_iters=50,noise=True):
-
     d = 4           
     alpha = 5
     ro = 0.12
@@ -348,7 +325,6 @@ def test_face(Img, Label, AE, num_class,lr1=1e-3,lr2=1e-4,pre_iters=200,fit_iter
             AE.save_model()   
             pred = True
 
-
         display_step = 10
         # fine-tune network
         epoch = 0
@@ -363,8 +339,6 @@ def test_face(Img, Label, AE, num_class,lr1=1e-3,lr2=1e-4,pre_iters=200,fit_iter
                 #print(cost)
                 for posti in range(1):
                     display(Coef, label_10_subjs, d, alpha, ro)
-
-
             if COLD is not None:
                 normc = np.linalg.norm(COLD, ord='fro')
                 normcd = np.linalg.norm(Coef - COLD, ord='fro')#计算Frobenius 范数
@@ -380,7 +354,6 @@ def test_face(Img, Label, AE, num_class,lr1=1e-3,lr2=1e-4,pre_iters=200,fit_iter
                 lastr = r
             COLD = Coef
         
-
         for posti in range(1):
             L,y_pre = display(Coef, label_10_subjs, d, alpha, ro)
             #(Img, Label, AE, 'tsne.png')
@@ -389,52 +362,13 @@ def test_face(Img, Label, AE, num_class,lr1=1e-3,lr2=1e-4,pre_iters=200,fit_iter
     visualize(Img, Label, AE)
     return y_pre,L
 
-
-
-
 if __name__ == '__main__':
 
-    data_mat = h5py.File('D:/data/montoro_log.h5')   #mouse_bladder_cell
+    data_mat = h5py.File('D:/data/GSM2230760.h5')   
     X=data_mat['X']
     label=data_mat['Y']
     X=np.array(X)
-    
-    #X=X.T
-    #label=np.array(label)
-    #label=np.array(label,dtype=int)
-    
     label=np.array(label)
-    y=pd.DataFrame(label)
-    y = y.dropna()
-    keys = y.keys()
-    y = y[keys].apply(LabelEncoder().fit_transform)
-    label = np.array(y,dtype=int)
-    label=label.reshape(-1,)
-    
-    # X = np.loadtxt('d:/data/111/Engel/Test_19_Engel_log.txt',delimiter='\t')
-    # label = np.loadtxt('d:/data/111/Engel/Test_19_Engel_label.txt',delimiter='\t',dtype=int)
-    
-    
-    # data=pd.read_csv('d:/data/CampbeLl_count.csv')
-    # label=pd.read_csv('d:/data/campbell_label.csv')
-    # label = label.dropna()
-    # keys = label.keys()
-    # label = label[keys].apply(LabelEncoder().fit_transform)
-    # label=label.iloc[:,1]
-    # X=data.iloc[:,1:-1]
-    
-    #读取mat文件
-    # data=scio.loadmat('d:/Matlab/code/MPSSC/project-master/MPSSC/Data/Data_Macosko.mat')
-    # X=data['in_X']
-    # label=data['true_labs']
-    # label=np.array(label,dtype=float)
-    
-    
-  
-    # scaler = MinMaxScaler()
-    # scaler.fit_transform(X)
-    #X=scale(X=X,with_mean=True,with_std=True,copy=True)
-    
     
     X=np.log(X+1)
     adata=sc.AnnData(X)
@@ -452,13 +386,10 @@ if __name__ == '__main__':
     n_input=[num,n_feature]#num:the number of cell ;n_feature:the number of genes
     n_hidden = [500,500,2000,10]#the size of AE
     
-    reg1 = 1.0e-4# reg1：重构损失系数
-    
-    reg2=0.01#reg2：自表示层损失系数
-    reg3=1#伪标签损失系数
-    
-    
-    reg4=1#伪图损失系数
+    reg1 = 1.0e-4
+    reg2=0.01
+    reg3=1
+    reg4=1
     lr1=1e-3
     lr2=1e-4#learn rate
     batch_size = num
@@ -466,34 +397,12 @@ if __name__ == '__main__':
     pre_iters=100#pre_train 
     fit_iters=50
     
-    time0=time()
     tf.reset_default_graph()
     AE = AE(n_input=n_input, n_hidden=n_hidden, reg_constant1=reg1, re_constant2=reg2,
                  re_constant3=reg3,re_constant4=reg4, batch_size=batch_size,ds=n_clusters,
                  model_path=model_path, restore_path=restore_path, logs_path=logs_path)
-    y_pred,C= test_face(X, label, AE, n_clusters,lr1,lr2,pre_iters,fit_iters,noise=True)
-    time1=time()
-    #np.save('d:/code/SelfsupervisedSC-master/result/romanov/romanov_pred_1.npy',y_pred)
     
+    y_pred,C= test_face(X, label, AE, n_clusters,lr1,lr2,pre_iters,fit_iters,noise=True)
     NMI=np.round(metrics.normalized_mutual_info_score(label,y_pred),3)
     ARI=np.round(metrics.adjusted_rand_score(label, y_pred),3)
     print('NMI:',NMI,'ARI:',ARI)
-    print('cost time:',time1-time0,'s')
-    
-    
-    Z=AE.transform(X)
-    Z_UMAP=umap.UMAP(n_components=2).fit_transform(Z, y_pred)
-    Z_TSNE = TSNE(n_components=2).fit_transform(Z, y_pred)
-    #visualize(Z, y_pred)
-    np.save('D:/code/SelfsupervisedSC-master/result_scSDSC/z_tsne/montoro_Z_umap.npy',Z_UMAP)
-    np.save('D:/code/SelfsupervisedSC-master/result_scSDSC/z_tsne/montoro_Z_tsne.npy',Z_TSNE)
-    #plt.scatter(Z_TSNE[:,0],Z_TSNE[:,1],c=y_pred)
-    
-    
-    # plt.figure(dpi=300)
-    # sns.heatmap(C,xticklabels =False,yticklabels =False,cmap='Spectral_r')
-    # plt.show()
-
-    
-      
-   
