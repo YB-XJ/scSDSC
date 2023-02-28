@@ -3,6 +3,8 @@
 See details in our paper: "scSDSC: Self-supervised Deep Subspace Clustering for scRNA-seq Data".  
 
 Requirements:  
+python --- 3.6.6
+
 tensorflow --- 1.2.0  
 numpy --- 1.19.5  
 pandas --- 1.1.5   
