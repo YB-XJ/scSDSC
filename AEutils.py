@@ -14,30 +14,6 @@ import seaborn as sns
 #from mpl_toolkits.mplot3d import Axes3D
 
 
-def best_map(L1,L2):
-    #L1 should be the groundtruth labels and L2 should be the clustering labels we got
-    Label1 = np.unique(L1)
-    nClass1 = len(Label1)
-    Label2 = np.unique(L2)
-    nClass2 = len(Label2)
-    nClass = np.maximum(nClass1,nClass2)
-    G = np.zeros((nClass,nClass))
-    for i in range(nClass1):
-        ind_cla1 = L1 == Label1[i]
-        ind_cla1 = ind_cla1.astype(float)
-        for j in range(nClass2):
-            ind_cla2 = L2 == Label2[j]
-            ind_cla2 = ind_cla2.astype(float)
-            G[i,j] = np.sum(ind_cla2 * ind_cla1)
-    m = Munkres()
-    index = m.compute(-G.T)
-    index = np.array(index)
-    c = index[:,1]
-    newL2 = np.zeros(L2.shape)
-    for i in range(nClass2):
-        newL2[L2 == Label2[i]] = Label1[c[i]]
-    return newL2
-
 def thrC(C,ro):
     if ro < 1:
         N = C.shape[1]
@@ -82,51 +58,16 @@ def post_proC(C, K, d, alpha, ro):
     grp = spectral.fit_predict(L) + 1
     return grp, L
 
-def err_rate(gt_s, s):
-    c_x = best_map(gt_s,s)
-    err_x = np.sum(gt_s[:] != c_x[:])
-    missrate = err_x.astype(float) / (gt_s.shape[0])
-    NMI = metrics.normalized_mutual_info_score(gt_s, c_x)
-    #ARI=metrics.adjusted_rand_score(gt_s, c_x)
-    purity = 0
-    N = gt_s.shape[0]
-    Label1 = np.unique(gt_s)
-    nClass1 = len(Label1)
-    Label2 = np.unique(c_x)
-    nClass2 = len(Label2)
-    nClass = np.maximum(nClass1, nClass2)
-    for label in Label2:
-        tempc = [i for i in range(N) if s[i] == label]
-        hist,bin_edges = np.histogram(gt_s[tempc],Label1)
-        purity += max([np.max(hist),len(tempc)-np.sum(hist)])
-    purity /= N
-    return missrate,NMI,purity
-
 def display(Coef, subjs, d, alpha, ro,numc = None,label = None):
     if numc is None:
         numc = np.unique(subjs).shape[0]
     if label is None:
         label = subjs
     y_x, L = post_proC(Coef, numc, d, alpha, ro)
-    NMI=np.round(metrics.normalized_mutual_info_score(label,y_x),4)
-    ARI=np.round(metrics.adjusted_rand_score(label, y_x),4)
-    #missrate_x, NMI, purity = err_rate(label, y_x)
-    #acc_x = 1 - missrate_x
-    #print("our accuracy: %.4f" % acc_x)
-    #print("our NMI: %.4f" % NMI, "our purity: %.4f" % purity)
+    NMI=np.round(metrics.normalized_mutual_info_score(label,y_x),3)
+    ARI=np.round(metrics.adjusted_rand_score(label, y_x),3)
     print("NMI: ", NMI, 'ARI:',ARI)
     return (L,y_x)
-    #return acc_x,L,y_x
-
-
-def display1(Coef, subjs, d, alpha, ro,numc = None,label = None):
-    if numc is None:
-        numc = np.unique(subjs).shape[0]
-    if label is None:
-        label = subjs
-    y_x, L = post_proC(Coef, numc, d, alpha, ro)
-    y_x=best_map(label,y_x)
-    return L,y_x
 
 colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k','orangered','greenyellow','darkolivegreen','maroon','darkgreen','darkslateblue','deeppink','goldenrod','teal','cornflowerblue','darksalmon','lightcoral','fuchsia']
 marks = ['o','+','.']
@@ -170,8 +111,3 @@ def drawC(C,name='C-L2.png',norm=False):
     IC.save(name)
     # IC.show()
     
-def contrastive_loss(y,d):
-    tmp = y*tf.square(d)
-    tmp2= (1-y)*tf.square(tf.maximum((1-d),0))
-    return 0.5*tf.reduce_sum(tmp+tmp2)
-
