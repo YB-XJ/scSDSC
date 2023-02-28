@@ -1,6 +1,6 @@
 # scSDSC
-scSDSC Self-supervised Deep Subspace Clustering for scRNA-seq Data
 
+See details in our paper: "scSDSC: Self-supervised Deep Subspace Clustering for scRNA-seq Data".  
 
 Requirements:  
 tensorflow --- 1.2.0  
