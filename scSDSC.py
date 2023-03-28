@@ -344,24 +344,17 @@ def test_face(Img, Label, AE, num_class,lr1=1e-3,lr2=1e-4,pre_iters=200,fit_iter
     print("%d clusters:" % num_class)    
     visualize(Img, Label, AE)
     return y_pre,L
-
 if __name__ == '__main__':
-
     data_mat = h5py.File('D:/data/GSM2230760.h5')   
     X=data_mat['X']
     label=data_mat['Y']
     X=np.array(X)
     label=np.array(label)
-    
-    X=np.log(X+1)
-    adata=sc.AnnData(X)
-    sc.pp.highly_variable_genes(adata, n_top_genes=2000)
-    adata = adata[:, adata.var.highly_variable]
-    X=adata.X
-    
     num,n_feature=X.shape
     n_clusters = max(label)-min(label)+1#the number of cluster
-
+    
+    X=preprocessing(X)
+    
     model_path = './models/model-tempfullfc.ckpt'
     restore_path = './models/model-tempfullfc.ckpt'
     logs_path = './logs'
