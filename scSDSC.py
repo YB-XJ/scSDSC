@@ -11,7 +11,7 @@ from scipy.sparse.linalg import svds
 from sklearn.manifold import TSNE
 from sklearn import cluster
 import umap.umap_ as umap
-
+import preprocessing
 
 def display(Coef, subjs, d, alpha, ro,numc = None,label = None):
     if numc is None:
